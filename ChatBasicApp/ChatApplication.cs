@@ -20,8 +20,7 @@ namespace ChatBasicApp
         private static IUI _ui;
         public static async Task Run(string[] args, IUI ui)
         {
-            //while (!cancellation.IsCancellationRequested)
-            //{
+            
                 _ui = ui;
                 IPEndPoint endPoint = new(IPAddress.Parse("127.0.0.1"), 8081);// change to IPAdress.Any()
                 Console.WriteLine("ChatApplication ChatBasicApplication v.1 is running...)");
@@ -76,8 +75,6 @@ namespace ChatBasicApp
                 Console.WriteLine("A task ended (Press Any Key to quit).");
                 await Task.Delay(500);
 
-
-            //}
         }
 
     }
