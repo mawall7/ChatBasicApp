@@ -5,7 +5,7 @@ The things that has to be handled are
 - sending and writing messages.
 - disconnects from the remote (gracefull/ ungracefull).
 - ui handling (ChatCommunicator class).
-- 
+  
 Message handling has to be done correclty, due to that received data 
 will be stored in the client receivedbuffer and will still be there until it is Received(),
 but, if other code for instance in the UI-thread will be executed, meanwhile new messages are sent from remote,
