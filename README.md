@@ -1,6 +1,6 @@
 - Main purpose was to make a backend project that included testing of asyncronous methods. 
 - Another purpose of this project was to explore implementations of socket in a local chat application,
-- the project should be able to be integrated with a UI frontend of choice like (like WPF/ MAUI) or default to console.
+  the project should be able to be integrated with a UI frontend of choice like (like WPF/ MAUI) or default to console.
 
 The things that has to be handled are
 - receiving messages from the socket through TCP protocoll.
