@@ -15,7 +15,7 @@ namespace ChatBasicApp_Tests
         private Mock<IUI> mockUI;
         private Client client;
         private Mock<IChatCommunicator> mockcommunicator;
-        private Mock<ISocketClient> mocksocket;
+        //private Mock<ISocketClient> mocksocket;
         
         [SetUp]
         public void Setup()
@@ -23,7 +23,7 @@ namespace ChatBasicApp_Tests
            
             IPEndPoint ipendpoint = new(IPAddress.Parse("127.0.0.1"), 8081);
             mockUI = new Mock<IUI>();
-            mocksocket = new Mock<ISocketClient>();
+            //mocksocket = new Mock<ISocketClient>();
             mockcommunicator = new Mock<IChatCommunicator>();
             
             mockUI.Setup(mock => mock.Output(It.IsAny<string>(), It.IsAny<MessageType>()));
