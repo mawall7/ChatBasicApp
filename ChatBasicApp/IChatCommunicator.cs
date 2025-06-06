@@ -13,6 +13,9 @@ namespace ChatBasicApp
         public event Action<string> StatusMessage;
         public Task ConnectAsync(IPEndPoint ipEndPoint);
         public void CreateSocket(AddressFamily addressFamily, SocketType socketType, ProtocolType protocolType);
+        public void Bind(IPEndPoint iPEndPoint);
+        public void Listen(int backlog);
+        public Task AcceptAsync();
         public Task<int> SendAsync(ArraySegment<byte> buffer, SocketFlags flags);
         public Task<int> ReceiveAsync(ArraySegment<byte> buffer, SocketFlags flags);
         public void Close();

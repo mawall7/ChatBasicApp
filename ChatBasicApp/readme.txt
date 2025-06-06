@@ -1,12 +1,20 @@
-﻿
-- One purpose of this project was to explore implementations of socket in a local chat application.
+﻿- Main purpose was to make an integrated sproject including testing project of asyncronous mothods.
 
-The things that has to be handled are
+- Another purpose of this project was to explore implementations of socket in a local chat application.
+
+1) The challenges needed to be handled for the application were:
+
 - receiving messages from the socket.
-- sending and writing messages.
+- sending
 - handle disconnects from the remote.
+- printing and processing messages through decoupled ui (console ui or WPF/ MAUI is your choice).
 
-Message handling has to be done correclty, due to that received data 
+2) The testing challenges needed to be handled were:
+	- implement a testing friendly environment 
+	- set up the tests, mocks (pretty straitforward)
+	- setting up asyncronous tests.
+
+1) Message handling has to be done correclty, due to that received data 
 will be stored in the client receivedbuffer and will still be there until it is Received(),
 but, if other code for instance in the UI-thread will be executed, meanwhile new messages are sent from remote,
 there may be a delay untill next Receive() execution. Unlike if you are declaring receiving listening in a completely different task with Task.Run
@@ -33,3 +41,19 @@ Another thing I lernt was to use CancellationToken, when another thread is inter
 then if (you have a token.Cancel() in the Main class or outer scope this will notice the thread if you send the token , and check for token.IsCacellationRequested)
 on ungracefull disconnects there will be a SocketError(and can be handled like allready mentioned).
 
+2) Testing challenges may be due to issues that developers are unaware, because it really doesn't matter to the application itself,
+   . Testing an continously running method in a loop is one example, let's say 
+   this method runs in a while loop and is stopped from console through F1 key press. Then the method has a risk of running forever and 
+   if Task is being used there is no way of stopt/killing it (and is not advisable anyway). One example was when making a test
+   for testing starting the application: ChatApplication.Run(). The application will normally try to Connect and retry Connect to remote
+   , so this test will run forever (if connection isn't mocked), and you may not want to test what happens after connection. so there are 2 options:
+   ether you could mock the connection and make connection return an error after an await, to see that it runs. which is an okey approach 
+   cause it will let you see that the application starts (stopping it afterwards by returning an error is okey since it is done in an controlled way)
+   However you may not always want to return an error to stop the application, because you may want to test a method in isolation, and retuning errors may
+   not work. So a solution in that case is to start the tested method in a Task and pass a CancellationTokenSource token. 
+   This depends on that the method is implemented in this way. Most applicatins should be implemented for error handling, so that should always
+   be in place, but developers may not be aware of implementing a Cancellation in this way. It was done in this project which is a good way for stopping
+   a task gracefully in a test. In non async methods another way is to pass a Funct delegate in the method parameter that must be incuded
+   in the program that can be invoked with true which will lead to breaking the loop.
+   
+   

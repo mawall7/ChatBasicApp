@@ -46,7 +46,7 @@ namespace ChatBasicApp
                     }
                     catch (Exception e)
                     {
-                        _ui.Output("Will try again to connect to server.", MessageType.Status);
+                        _ui.Output("Will try again to connect to server ." + e.Message, MessageType.Status);
                         await Task.Delay(2000);
                     }
                 }
@@ -74,15 +74,11 @@ namespace ChatBasicApp
             {
                 await Task.Delay(100);
 
-                // Handle incoming messages
-                //do an experiment and make a stopwatch. comparing Task and _client Available
-
-                //int received = await _client.ReceiveAsync(receivedFromRemote, SocketFlags.None); //will ? or return 0 if server connection is closed
+                
                 int received = 0;
                 try
                 {
-                    //ISocketClient client = (ISocketClient)_client;
-
+                
                     received = await _chatCommunicator.ReceiveAsync(receivedFromRemote, SocketFlags.None); 
                 }
                
@@ -200,49 +196,48 @@ namespace ChatBasicApp
 
                     if (Console.KeyAvailable)
                     {
-                        //var key = Console.ReadKey(true);
                         
-                        string key = _ui.ReadInput();
+                        string inputresult = _ui.ReadInput();
 
-                        //send writing...
-                        byte[] PrintingBytes = Encoding.UTF8.GetBytes("<|PRINT|>");
-                        await _chatCommunicator.SendAsync(PrintingBytes, SocketFlags.None);//_client.SendAsync(PrintingBytes, SocketFlags.None);
-
-                        //how to do the convertions here ? parse ConsoleKeyInfo to string then back to ConsoleKeyInfo again? seems unncesssary but IUI has only one readinput method that returns string. it is easy to solve in different ways but wich is best practise?  
-
-                        if (key == "<Enter>" || key == "<Quit>")
+                        //Handle the processed inputresult
+                        if (inputresult == "<|Quit|>" || inputresult == "<|EOM|>") // On Enter input (send the message) or Quit (break) 
                         {
-                            string messageToSend = messageBuffer.ToString() + "<|EOM|>";
-
-                            if (key == "Quit")
+                            inputresult = inputresult == "<|EOM|>" ? messageBuffer.ToString() + "<|EOM|>" : inputresult;  //EOM means enter input or else sent quit message
+                            byte[] messageBytes = Encoding.UTF8.GetBytes(inputresult);
+                            try
                             {
-                                messageToSend = "<|QUIT|>";
+                                await _chatCommunicator.SendAsync(messageBytes, SocketFlags.None); 
+
                             }
-                            //Send message or quit message
-                            byte[] messageBytes = Encoding.UTF8.GetBytes(messageToSend);
-                            await _chatCommunicator.SendAsync(messageBytes, SocketFlags.None);
-
-                            if (key == "<Quit>")
+                            catch (SocketException e)
                             {
-                                Console.WriteLine("You quit the chat session.");
+
+                                _ui.Output("Message from client could not be sent properly. " + e.Message, MessageType.Error);
+                            }
+
+                            if (inputresult == "<|Quit|>")
+                            {
+                                _ui.Output("You quit the chat session.", MessageType.General);
                                 break;
                             }
-                            else
-                            {
-                                Console.WriteLine(System.Environment.NewLine +
-                                    $"Sent: {messageToSend.Replace("<|EOM|>", "")}");
 
+                            if (inputresult.Contains("<|EOM|>"))
+                            {
+                                _ui.Output(System.Environment.NewLine +
+                                   $"Sent: {inputresult.Replace("<|EOM|>", "")}", MessageType.General);
 
                                 //await WaitForAckAsync();
-
                                 messageBuffer.Clear();
                                 _ui.Output("\nWrite another message:", MessageType.General);
                             }
                         }
-
+                        //If input and not Enter pressed just Append to buffer and send writing...
                         else
                         {
-                            messageBuffer.Append(key);
+                            messageBuffer.Append(inputresult);
+                            //send writing...
+                            byte[] PrintingBytes = Encoding.UTF8.GetBytes("<|PRINT|>");
+                            await _chatCommunicator.SendAsync(PrintingBytes, SocketFlags.None);//_client.SendAsync(PrintingBytes, SocketFlags.None);
                             //_ui.Output(key, MessageType.General);
                         }
                     }

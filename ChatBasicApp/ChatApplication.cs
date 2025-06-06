@@ -13,8 +13,8 @@ namespace ChatBasicApp
 {
     public class ChatApplication
     {
-        private static Task servertask;
-        private static Task clienttask;
+        
+        
         internal static CancellationTokenSource cts;
         internal static CancellationToken token;
         private static IUI _ui;
@@ -23,14 +23,15 @@ namespace ChatBasicApp
             
                 _ui = ui;
                 IPEndPoint endPoint = new(IPAddress.Parse("127.0.0.1"), 8081);// change to IPAdress.Any()
-                Console.WriteLine("ChatApplication ChatBasicApplication v.1 is running...)");
+                //Console.WriteLine("ChatApplication ChatBasicApplication v.1 is running...)");
+                _ui.Output("ChatApplication ChatBasicApplication v.1 is running...)",NetworkServer.MessageType.Status);
                 cts = new CancellationTokenSource();
                 token = cts.Token;
                 
 
                 if (args[0].ToLower() == "server")
                 {
-                    Server chatserver = new Server(endPoint, _ui);
+                    Server chatserver = new Server(endPoint, _ui, new ChatCommunicator());
 
                     await chatserver.Connect();
 
@@ -39,7 +40,7 @@ namespace ChatBasicApp
 
                     await Task.WhenAny(listentask, writetask);
 
-                    Console.WriteLine(" Server task ended...");
+                    _ui.Output(" Server task ended...", NetworkServer.MessageType.Status);
                     //Console.ReadKey();
 
                 }
@@ -67,12 +68,12 @@ namespace ChatBasicApp
                     //    Console.WriteLine("The session was closed. Connection with server was lost." + " " +e.Message);
                     //}
                     await Task.WhenAny(clientlisten, clientwrite);
-                    Console.WriteLine("Client task ended...");
+                    _ui.Output("Client task ended...", NetworkServer.MessageType.Status);
                 }
                 else { _ui.Output("You need to include arguments : server or client, to start the application", NetworkServer.MessageType.General); }
 
 
-                Console.WriteLine("A task ended (Press Any Key to quit).");
+                _ui.Output("A task ended (Press Any Key to quit).", NetworkServer.MessageType.Status);
                 await Task.Delay(500);
 
         }

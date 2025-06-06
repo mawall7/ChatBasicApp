@@ -8,94 +8,94 @@ using NetworkServer;
 
 namespace ChatBasicApp
 {
-    public class Server :IDisposable
+    public class Server //:IDisposable
     {
-        TcpListener listener;
-        IPAddress iPAddress;
+        
         IPEndPoint iPEndPoint;
-        private Socket _socket = null;
+        //private Socket _socket = null;
         private IUI _ui;
+        private IChatCommunicator _chatCommunicator { get; set; }
 
-        public Server(IPEndPoint iPendPoint, IUI userinput)
+        public Server(IPEndPoint iPendPoint, IUI userinput, IChatCommunicator ChatCommunicator)
         {
             iPEndPoint = iPendPoint;
             _ui = userinput;
+            _chatCommunicator = ChatCommunicator;
         }
 
         public async Task Connect()
         {
-
-            Socket sockethandler = new(
-            iPEndPoint.AddressFamily,
+            _chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); // may cause problems both task are using the same event handler ? racing condition 
+            _chatCommunicator.CreateSocket(iPEndPoint.AddressFamily,
             SocketType.Stream,
             ProtocolType.Tcp);
-
-            sockethandler.Bind(iPEndPoint);
-            sockethandler.Listen(100);
-
-            var connecttask = sockethandler.AcceptAsync();
-
-            while (!connecttask.IsCompleted)
-            {
-                _ui.Output("Connecting to client", MessageType.Status);
-                await Task.Delay(2000);
-            }
+            
+            _chatCommunicator.Bind(iPEndPoint); // binds server
+            _chatCommunicator.Listen(100); // this will put server socket into Listening mode for clients connect attempts.
+           
+            var connecttask = _chatCommunicator.AcceptAsync();//_socket.AcceptAsync();
 
             try
-            {
-                _socket = await connecttask;
+            { 
+                await connecttask;
+
+                //Checked chatgpt for thesse errors : 
+                //DualMode system.not supported Exception
+                //EnableBroadCast socketException
+                //MultiCastLoopBack socketException
+                //those internal errors usually don’t interfer and doesn't have to be handled, they happen just because you havn't opted for these props.
 
             }
-            catch (Exception)
+            catch (Exception e)
             {
 
-                throw;
+                _ui.Output("Connection with client failed.", MessageType.Error);
             }
 
-            _ui.Output("Connection accepted from client.", MessageType.Status);
+            //_ui.Output("Connection accepted from client.", MessageType.Status);
         }
 
-        public void Dispose()
-        {
-            if (_socket != null)
-            {
-                _socket.Dispose();
-            }
-        }
+        //public void Dispose()
+        //{
+        //    if (_socket != null)
+        //    {
+        //        _socket.Dispose();
+        //    }
+        //}
 
         public async Task Listen(CancellationToken token)
         {
             int received = 0;
 
+            _chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); // may cause problems both task are using the same event handler ? racing condition 
+
+
             while (!token.IsCancellationRequested)
             {
-                // Receive message.
+                
                 var buffer = new byte[1_024];
 
-
+                // Receive message
                 try
                 {
-                    received = await _socket.ReceiveAsync(buffer, SocketFlags.None); //to do gör en buffer och kolla att TCP fått ett helt meddelande innehåller "|EOF|" eller ACK eller <|PRINT|>  - en process messages metod // även om medelanden skickas separat från client tex. först PRINT sedan message så kanske receive blir "|<PRINT> message| eller bara "<PRI" sedan NT> sedan message , hur meddalandet skickas och tas emot går inte att kontrollera när TCP används.
+                    received = await _chatCommunicator.ReceiveAsync(buffer, SocketFlags.None); //to do gör en buffer och kolla att TCP fått ett komplpp meddelande innehåller "|EOF|" eller ACK eller <|PRINT|>  - en process messages metod ?
 
                 }
                 catch (SocketException ex)
                 {
 
                     _ui.Output("The remote client seems to ungracefully have disconnected. " + ex.Message, MessageType.Warning);
-                    Dispose();
+                   
                 }
-
-                //check disconnect //however Poll will only detect remote graceful disconnets deliberately but not crashes
-                if (received == 0) //will not detect crashes etc or if the remote close program with ctrl-c. will have to be handled by catch SocketException
+                
+                if (received == 0) // 0 is returned on a  gracefull disconnect, but other diconnects have to be caught (gives SocketException) with will not detect crashes etc or if the remote close program with ctrl-c. 
                 {
                     _ui.Output("Remote client disconnected.", MessageType.Status);
-                    Dispose(); //close the socket
                     break;
                 }
 
                 var response = Encoding.UTF8.GetString(buffer, 0, received);
 
-                //end of message should be sent after receiveing a message ending with eom suffix
                 var eom = "<|EOM|>";
                 if (response.IndexOf(eom) > -1 && !response.Contains("<|QUIT|>"))//received end of message and Q is not pressed
                 {
@@ -107,7 +107,8 @@ namespace ChatBasicApp
 
                     var ackMessage = "<|ACK|>";
                     var echoBytes = Encoding.UTF8.GetBytes(ackMessage);
-                    await _socket.SendAsync(echoBytes, 0);
+                    await _chatCommunicator.SendAsync(echoBytes, 0); //await _socket.SendAsync(echoBytes, 0);
+                    
                     _ui.Output(
                         $"Socket server sent acknowledgment: \"{ackMessage}\"", MessageType.Status);//send
                 }
@@ -121,8 +122,7 @@ namespace ChatBasicApp
                     _ui.Output("Remote client ended the chat session.", MessageType.Status);
                     break;
                 }
-
-                //Recieve part
+                
             }
             _ui.Output("Press any key to quit.", MessageType.Status);
             if (_ui is ConsoleUI)
@@ -135,10 +135,11 @@ namespace ChatBasicApp
         public void SendMessage(string message)
         {
             var echoBytes = Encoding.UTF8.GetBytes(message);
-            _socket.SendAsync(echoBytes, 0); //to do ISocket to make Write method testable 
+            _chatCommunicator.SendAsync(echoBytes, 0);  
+            //_socket.SendAsync(echoBytes, 0);
         }
 
-        public async Task Write(CancellationToken token) //to do make Write testabble 
+        public async Task Write(CancellationToken token) //to do make Write testabble and do a common process commands class for the moment there are 2 different implementation.
         {
             var WriteBuffer = new StringBuilder();
             
@@ -155,7 +156,7 @@ namespace ChatBasicApp
 
                         try
                         {
-                            var input = _ui.ReadInput(); //should be handled internally? and only return letters and send different messages codes add eom 
+                            var input = _ui.ReadInput(); 
                             
                         
                             message = input == "<|EOM|>"  
@@ -177,17 +178,16 @@ namespace ChatBasicApp
                                 ConsoleHelper.Backspace();
                             }
                             
+                            SendMessage(message);
+                            
                             if(input == "<|EOM|>")
                             {
                                 WriteBuffer.Clear();
                                 Console.Write(System.Environment.NewLine);
                             }
-                            
                         
-                            SendMessage(message);
                         }
 
-                                
                         catch (InvalidOperationException ex)
                         {
                             _ui.Output("error at input." + ex.Message, MessageType.Warning);
@@ -200,29 +200,27 @@ namespace ChatBasicApp
                 }
                 else 
                 {
-                    //var message =  _ui.ReadInput(); //for now returns string not key pressed when using wpf_ui. wpf window event handlers will set TaskCompletionSource.SetResult if either OnTextChanged is triggered (writing in box) that sends <|PRINT|> or OnSend (Send message button event).
-                    
                     try
                     {
-                        string msg = _ui.ReadInput(); //wtf handler can make sure to only execute this on return press so don't need that part (unlike for console) for writing this has be fixed in some way
-                        if (msg.Contains("<|PRINT|>")) //change this is not correct and is unnecessary
+                        string msg = _ui.ReadInput(); 
+                        if (msg.Contains("<|PRINT|>")) 
                         {
                             msg = "<|PRINT|>";
                         }
 
                         byte[] messageBytes = Encoding.UTF8.GetBytes(msg);
-                        await _socket.SendAsync(messageBytes, SocketFlags.None);
+                        await _chatCommunicator.SendAsync(messageBytes, SocketFlags.None);
                     }
 
                     catch (Exception e)
                     {
 
-                        Console.WriteLine("Error occured when trying to send message from Server. " + e.Message);
+                        _ui.Output("Error occured when trying to send message from Server. " + e.Message, MessageType.Error);
                     }
                 }
             }
 
-            Dispose();
+            
         }
 
 
