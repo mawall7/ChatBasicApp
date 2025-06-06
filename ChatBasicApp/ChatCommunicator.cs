@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ChatBasicApp
 {
-    public class ChatCommunicator : IChatCommunicator //ISocketClient removed// wrapper for Socket
+    public class ChatCommunicator : IChatCommunicator 
     {
         private Socket _socket { get; set; }// is either listnersocket for server or the single socket for a client.
 
@@ -26,7 +26,6 @@ namespace ChatBasicApp
             _socket = new Socket(addressFamily, socketType, protocolType);
 
         }
-
 
         public void Bind(IPEndPoint iPEndPoint) => _socket.Bind(iPEndPoint);
 
