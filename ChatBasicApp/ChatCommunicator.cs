@@ -33,26 +33,7 @@ namespace ChatBasicApp
 
         public async Task AcceptAsync() // to do. Timeout for _socket.Async you could pass a cancellation token to this method and then start both the connection task and a waittask and then use Task.WhenAny(task, waittask) , will cancel if connect task isnn't ready before the Task.Wait task.
         {
-            //*
-            //try
-            //{
-            //    StatusMessage?.Invoke("Waiting for client connection...");
-
-            //    this._socket = await _socket.AcceptAsync();
-
-
-
-            //    StatusMessage?.Invoke("Connection accepted from client.");
-
-            //    // Optionally: handle the client socket in another method
-            //    //HandleClient(clientSocket);
-            //}
-            //catch (Exception ex)
-            //{
-            //    StatusMessage?.Invoke($"Error accepting client: {ex.Message}");
-            //    throw;
-            //}
-            //*
+            
             var connecttask = _socket.AcceptAsync();
 
             while (!connecttask.IsCompleted)
@@ -63,7 +44,7 @@ namespace ChatBasicApp
 
             try
             {
-                _remoteSocket = await connecttask;  //to do!. probably wrong should it overrites the server socket with the accepted client socket ! check on this
+                _remoteSocket = await connecttask;  
 
             }
             catch (Exception)

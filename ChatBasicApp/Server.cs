@@ -12,7 +12,6 @@ namespace ChatBasicApp
     {
         
         IPEndPoint iPEndPoint;
-        //private Socket _socket = null;
         private IUI _ui;
         private IChatCommunicator _chatCommunicator { get; set; }
 
@@ -39,7 +38,7 @@ namespace ChatBasicApp
             { 
                 await connecttask;
 
-                //Checked chatgpt for thesse errors : 
+                //Checked chatgpt for these errors : 
                 //DualMode system.not supported Exception
                 //EnableBroadCast socketException
                 //MultiCastLoopBack socketException
@@ -52,16 +51,8 @@ namespace ChatBasicApp
                 _ui.Output("Connection with client failed.", MessageType.Error);
             }
 
-            //_ui.Output("Connection accepted from client.", MessageType.Status);
         }
 
-        //public void Dispose()
-        //{
-        //    if (_socket != null)
-        //    {
-        //        _socket.Dispose();
-        //    }
-        //}
 
         public async Task Listen(CancellationToken token)
         {
@@ -139,7 +130,7 @@ namespace ChatBasicApp
             //_socket.SendAsync(echoBytes, 0);
         }
 
-        public async Task Write(CancellationToken token) //to do make Write testabble and do a common process commands class for the moment there are 2 different implementation.
+        public async Task Write(CancellationToken token) //to do Make Write testabble and do a common process commands class for server and client. 
         {
             var WriteBuffer = new StringBuilder();
             

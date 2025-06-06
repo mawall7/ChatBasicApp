@@ -10,12 +10,12 @@ using System;
 
 namespace ChatBasicApp_Tests
 {
-    public class Tests
+    public class Tests //to do Add more tests!
     {
         private Mock<IUI> mockUI;
         private Client client;
         private Mock<IChatCommunicator> mockcommunicator;
-        //private Mock<ISocketClient> mocksocket;
+        
         
         [SetUp]
         public void Setup()
