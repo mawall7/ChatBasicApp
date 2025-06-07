@@ -53,7 +53,7 @@ namespace ChatBasicApp
 
         }
 
-
+        //TO DO: Make lock to avoid racing conditions. 
         public async Task Listen(CancellationToken token)
         {
             int received = 0;
@@ -69,7 +69,7 @@ namespace ChatBasicApp
                 // Receive message
                 try
                 {
-                    received = await _chatCommunicator.ReceiveAsync(buffer, SocketFlags.None); //to do gör en buffer och kolla att TCP fått ett komplpp meddelande innehåller "|EOF|" eller ACK eller <|PRINT|>  - en process messages metod ?
+                    received = await _chatCommunicator.ReceiveAsync(buffer, SocketFlags.None); //TO DO: Make a messagebuffer and check for (<|EOM|>)  <|ACK|> or <|PRINT|> . Write only complete messages.
 
                 }
                 catch (SocketException ex)
@@ -130,7 +130,9 @@ namespace ChatBasicApp
             //_socket.SendAsync(echoBytes, 0);
         }
 
-        public async Task Write(CancellationToken token) //to do Make Write testabble and do a common process commands class for server and client. 
+        //TO DO: Make lock to avoid racing conditions.
+        
+        public async Task Write(CancellationToken token) //TO DO: Make Write testabble and do a common process commands class for server and client. 
         {
             var WriteBuffer = new StringBuilder();
             
@@ -142,51 +144,98 @@ namespace ChatBasicApp
 
                     if (Console.KeyAvailable)
                     {
-                        
-                        string message = default;
 
-                        try
+                        string inputresult = _ui.ReadInput();
+
+                        //Handle the processed inputresult
+                        if (inputresult == "<|Quit|>" || inputresult == "<|EOM|>") // On Enter input (send the message) or Quit (break) 
                         {
-                            var input = _ui.ReadInput(); 
-                            
-                        
-                            message = input == "<|EOM|>"  
-                                ? WriteBuffer.ToString() 
-                                : (input == "<|Quit|>" 
-                                ? input : "<|PRINT|>");
+                            inputresult = inputresult == "<|EOM|>" ? WriteBuffer.ToString() + "<|EOM|>" : inputresult;  //EOM means enter input or else sent quit message
+                            byte[] messageBytes = Encoding.UTF8.GetBytes(inputresult);
+                            try
+                            {
+                                await _chatCommunicator.SendAsync(messageBytes, SocketFlags.None);
 
-                            if (input != "<BackSpace>")
-                            {
-                                WriteBuffer.Append(input); //to do buffer and process tcp response to correct string to not get buffered strings like <|PRINT|hello<|PRINT|>> writing..etc. 
                             }
-                            else 
+                            catch (SocketException e)
                             {
-                                if (WriteBuffer.Length > 0)
-                                {
-                                    WriteBuffer = WriteBuffer.Remove(WriteBuffer.Length - 1, 1);
-                                }
 
-                                ConsoleHelper.Backspace();
+                                _ui.Output("Message from client could not be sent properly. " + e.Message, MessageType.Error);
                             }
-                            
-                            SendMessage(message);
-                            
-                            if(input == "<|EOM|>")
+
+                            if (inputresult == "<|Quit|>")
                             {
+                                _ui.Output("You quit the chat session.", MessageType.General);
+                                break;
+                            }
+
+                            if (inputresult.Contains("<|EOM|>"))
+                            {
+                                _ui.Output(System.Environment.NewLine +
+                                   $"Sent: {inputresult.Replace("<|EOM|>", "")}", MessageType.General);
+
+                                //await WaitForAckAsync();
                                 WriteBuffer.Clear();
-                                Console.Write(System.Environment.NewLine);
+                                _ui.Output("\nWrite another message:", MessageType.General);
                             }
-                        
+                        }
+                        //If input and not Enter pressed just Append to buffer and send writing...
+                        else
+                        {
+                            WriteBuffer.Append(inputresult);
+                            //send writing...
+                            byte[] PrintingBytes = Encoding.UTF8.GetBytes("<|PRINT|>");
+                            await _chatCommunicator.SendAsync(PrintingBytes, SocketFlags.None);//_client.SendAsync(PrintingBytes, SocketFlags.None);
+                            //_ui.Output(key, MessageType.General);
                         }
 
-                        catch (InvalidOperationException ex)
-                        {
-                            _ui.Output("error at input." + ex.Message, MessageType.Warning);
-                        }
-                        catch(SocketException e)
-                        {
-                            _ui.Output("error on sending message. " + e.Message, MessageType.Error);
-                        }
+
+                        //*previous code
+                        //string message = default;
+
+                        //try
+                        //{
+                        //    var input = _ui.ReadInput(); 
+
+
+                        //    message = input == "<|EOM|>"  
+                        //        ? WriteBuffer.ToString() 
+                        //        : (input == "<|Quit|>" 
+                        //        ? input : "<|PRINT|>");
+
+                        //    if (input != "<BackSpace>")
+                        //    {
+                        //        WriteBuffer.Append(input); //to do buffer and process tcp response to correct string to not get buffered strings like <|PRINT|hello<|PRINT|>> writing..etc. 
+                        //    }
+                        //    else 
+                        //    {
+                        //        if (WriteBuffer.Length > 0)
+                        //        {
+                        //            WriteBuffer = WriteBuffer.Remove(WriteBuffer.Length - 1, 1);
+                        //        }
+
+                        //        ConsoleHelper.Backspace();
+                        //    }
+
+                        //    SendMessage(message);
+
+                        //    if(input == "<|EOM|>")
+                        //    {
+                        //        WriteBuffer.Clear();
+                        //        Console.Write(System.Environment.NewLine);
+                        //    }
+
+                        //}
+
+                        //catch (InvalidOperationException ex)
+                        //{
+                        //    _ui.Output("error at input." + ex.Message, MessageType.Warning);
+                        //}
+                        //catch(SocketException e)
+                        //{
+                        //    _ui.Output("error on sending message. " + e.Message, MessageType.Error);
+                        //}
+                        //previous code
                     }
                 }
                 else 

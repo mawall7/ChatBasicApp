@@ -31,7 +31,7 @@ namespace ChatBasicApp
 
         public void Listen(int backlog) => _socket.Listen(backlog);
 
-        public async Task AcceptAsync() // to do. Timeout for _socket.Async you could pass a cancellation token to this method and then start both the connection task and a waittask and then use Task.WhenAny(task, waittask) , will cancel if connect task isnn't ready before the Task.Wait task.
+        public async Task AcceptAsync() // TO DO: Timeout for _socket.Async you could pass a cancellation token to this method and then start both the connection task and a waittask and then use Task.WhenAny(task, waittask) , will cancel if connect task isnn't ready before the Task.Wait task.
         {
             
             var connecttask = _socket.AcceptAsync();

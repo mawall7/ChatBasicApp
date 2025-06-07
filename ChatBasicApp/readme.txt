@@ -1,8 +1,13 @@
 ﻿- Main purpose was to make an integrated sproject including testing project of asyncronous mothods.
 
 - Another purpose of this project was to explore implementations of socket in a local chat application.
+  
+  General considerations about implementations that you may wondering : 
+	- DRY : In some cases like in the server and client classes I wrote different implementations
+            of the methods. It was intentionall to experiment and compare different solutions, but
+			the final project should be consistent. 
 
-1) The challenges needed to be handled for the application were:
+1) The challenges needed to be handled writing the application were:
 
 - receiving messages from the socket.
 - sending

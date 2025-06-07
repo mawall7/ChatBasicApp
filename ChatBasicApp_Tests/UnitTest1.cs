@@ -10,7 +10,7 @@ using System;
 
 namespace ChatBasicApp_Tests
 {
-    public class Tests //to do Add more tests!
+    public class Tests //TO DO: Add more tests!
     {
         private Mock<IUI> mockUI;
         private Client client;

@@ -8,7 +8,7 @@ namespace ChatBasicApp
 {
     public class ConsoleUI : IUI
     {
-        public void Output(string input, MessageType messageType) //to do implement messageType
+        public void Output(string input, MessageType messageType) 
         {
             Console.WriteLine(input);
         }

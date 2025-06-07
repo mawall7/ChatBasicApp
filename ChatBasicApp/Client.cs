@@ -25,7 +25,7 @@ namespace ChatBasicApp
             _chatCommunicator = chatCommunicator;
         }
 
-        public async Task Connect(CancellationToken cancellation) //behöver i såfall göra klassen till IDisposable
+        public async Task Connect(CancellationToken cancellation) 
         {
            
                 _chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); //second parameter is allowed if it's not put in the (). 
@@ -187,7 +187,7 @@ namespace ChatBasicApp
         public async Task Write(CancellationToken token)
         {
             
-            var messageBuffer = new StringBuilder();
+            var WriteBuffer = new StringBuilder();
 
             while (!token.IsCancellationRequested) 
             {
@@ -202,7 +202,7 @@ namespace ChatBasicApp
                         //Handle the processed inputresult
                         if (inputresult == "<|Quit|>" || inputresult == "<|EOM|>") // On Enter input (send the message) or Quit (break) 
                         {
-                            inputresult = inputresult == "<|EOM|>" ? messageBuffer.ToString() + "<|EOM|>" : inputresult;  //EOM means enter input or else sent quit message
+                            inputresult = inputresult == "<|EOM|>" ? WriteBuffer.ToString() + "<|EOM|>" : inputresult;  //EOM means enter input or else sent quit message
                             byte[] messageBytes = Encoding.UTF8.GetBytes(inputresult);
                             try
                             {
@@ -227,14 +227,14 @@ namespace ChatBasicApp
                                    $"Sent: {inputresult.Replace("<|EOM|>", "")}", MessageType.General);
 
                                 //await WaitForAckAsync();
-                                messageBuffer.Clear();
+                                WriteBuffer.Clear();
                                 _ui.Output("\nWrite another message:", MessageType.General);
                             }
                         }
                         //If input and not Enter pressed just Append to buffer and send writing...
                         else
                         {
-                            messageBuffer.Append(inputresult);
+                            WriteBuffer.Append(inputresult);
                             //send writing...
                             byte[] PrintingBytes = Encoding.UTF8.GetBytes("<|PRINT|>");
                             await _chatCommunicator.SendAsync(PrintingBytes, SocketFlags.None);//_client.SendAsync(PrintingBytes, SocketFlags.None);
@@ -244,8 +244,8 @@ namespace ChatBasicApp
                 }
                 else if (_ui is not ConsoleUI) //WPF UI or other MAUI
                 {
-                    string msg = _ui.ReadInput(); //wtf handler can make sure to only execute this on return press so don't need that part (unlike for console) for writing this has be fixed in some way
-                    if (msg.Contains("<|PRINT|>")) //change this is not correct and is unnecessary
+                    string msg = _ui.ReadInput(); // TO DO: wtf handler can make sure to only execute this on return press so don't need that part (unlike for console) for writing this has be fixed in some way
+                    if (msg.Contains("<|PRINT|>")) //FIX : change this ?
                     {
                         msg = "<|PRINT|>";
                     }
