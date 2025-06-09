@@ -24,9 +24,9 @@ namespace ChatBasicApp
 
         }
 
-        public async Task Connect()
+        public async Task Connect() //TODO: future suggestion adding support for multiple clients.
         {
-            //_chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); 
+            
             _chatCommunicator.CreateSocket(iPEndPoint.AddressFamily,
             SocketType.Stream,
             ProtocolType.Tcp);
