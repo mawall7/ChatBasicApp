@@ -89,6 +89,7 @@ namespace ChatBasicApp
                 {
                     _ui.Output("The remote server seems to have ungracefully disconnected. " + ex.Message, MessageType.Error);
                     _chatCommunicator.Dispose();
+                    break;
                     
                 }
                     

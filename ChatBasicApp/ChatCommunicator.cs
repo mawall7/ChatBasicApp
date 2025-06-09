@@ -77,12 +77,32 @@ namespace ChatBasicApp
         {
             //byte[] receivedFromRemote = new byte[1024];
             var sockettouse = _remoteSocket ?? _socket;
-            return await sockettouse.ReceiveAsync(buffer, SocketFlags.None);
+            try
+            {
+                return await sockettouse.ReceiveAsync(buffer, SocketFlags.None);
+               
+            }
+
+            catch (NullReferenceException )
+            {
+                throw;
+            }
+
+            //return await sockettouse.ReceiveAsync(buffer, SocketFlags.None);
         }
         public async Task<int> SendAsync(ArraySegment<byte> buffer, SocketFlags flags)
         {
             var sockettouse = _remoteSocket ?? _socket;
-            return await sockettouse.SendAsync(buffer, flags);
+            try
+            {
+                return await sockettouse.SendAsync(buffer, flags);
+
+            }
+            catch (NullReferenceException e)
+            {
+                Console.WriteLine("Error on Sending to remote. " + e.Message);
+                throw;
+            }
         }
 
         public void Close()
