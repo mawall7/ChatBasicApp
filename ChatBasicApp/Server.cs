@@ -76,7 +76,7 @@ namespace ChatBasicApp
                 {
 
                     _ui.Output("The remote client seems to ungracefully have disconnected. " + ex.Message, MessageType.Warning);
-                   
+                    _chatCommunicator.Dispose(); 
                 }
                 
                 if (received == 0) // 0 is returned on a  gracefull disconnect, but other diconnects have to be caught (gives SocketException) with will not detect crashes etc or if the remote close program with ctrl-c. 
