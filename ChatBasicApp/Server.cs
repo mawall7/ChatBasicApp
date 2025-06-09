@@ -20,11 +20,13 @@ namespace ChatBasicApp
             iPEndPoint = iPendPoint;
             _ui = userinput;
             _chatCommunicator = ChatCommunicator;
+            _chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); // TODO : may cause problems both task are using the same event handler ? racing condition 
+
         }
 
         public async Task Connect()
         {
-            _chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); // may cause problems both task are using the same event handler ? racing condition 
+            //_chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); 
             _chatCommunicator.CreateSocket(iPEndPoint.AddressFamily,
             SocketType.Stream,
             ProtocolType.Tcp);
@@ -58,7 +60,7 @@ namespace ChatBasicApp
         {
             int received = 0;
 
-            _chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); // may cause problems both task are using the same event handler ? racing condition 
+            //_chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); // may cause problems both task are using the same event handler ? racing condition 
 
 
             while (!token.IsCancellationRequested)

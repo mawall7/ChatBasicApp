@@ -23,12 +23,14 @@ namespace ChatBasicApp
             IpEndPoint = ipEndPoint;
             _ui = userinput;
             _chatCommunicator = chatCommunicator;
+            _chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); // may cause problems both task are using the same event handler ? racing condition 
+
         }
 
         public async Task Connect(CancellationToken cancellation) 
         {
            
-                _chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); //second parameter is allowed if it's not put in the (). 
+                //_chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); //second parameter is allowed if it's not put in the (). 
 
                 _chatCommunicator.CreateSocket(IpEndPoint.AddressFamily,
                    SocketType.Stream,
