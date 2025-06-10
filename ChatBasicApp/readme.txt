@@ -15,7 +15,7 @@
 - printing and processing messages through decoupled ui (console ui or WPF/ MAUI is your choice).
 
 2) The testing challenges needed to be handled were:
-	- implement a testing friendly environment 
+	- implement a testing-friendly environment 
 	- set up the tests, mocks (pretty straitforward)
 	- setting up asyncronous tests.
 
@@ -61,4 +61,20 @@ on ungracefull disconnects there will be a SocketError(and can be handled like a
    a task gracefully in a test. In non async methods another way is to pass a Funct delegate in the method parameter that must be incuded
    in the program that can be invoked with true which will lead to breaking the loop.
    
-   
+Error considerations and solution: 
+
+SocketErrors : At some time I got a hang up of the application, but the cause were not some suspect
+internal Socket Errors. I 
+Checked chatgpt for these errors : DualMode system.not supported Exception, EnableBroadCast socketException
+MultiCastLoopBack socketException. Those internal errors usually don’t interfer with using the socket and 
+doesn't have to be handled, they happen just because you havn't opted for these settings. And I dind't have
+to take them in consideration for the sake of my setup.
+
+HangUps during ErrorHandling: After abstracting the socket methods into ChatCommunicator class, at some point 
+there was a hang up of the server when manually testing to disconnect with ctrl-c. first I followed the error 
+to the handler class which was related to remote socket Null Reference. Catching the NRE didn't make sense,
+since that error didn't come up before and Socket Error should be the imediate error to catch after an ungracefull 
+disconnect, so there had to be another issue. And this was right and a simple bug was causing this. 
+There was still a Socket Exception that was being caught as intended, but a break statement was gone in the server
+listen method, so the handler tried to access the socket after it had been disposed. After fixing this the application
+was working and closing down again correctly. 

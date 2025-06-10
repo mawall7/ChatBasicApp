@@ -14,17 +14,19 @@ namespace ChatBasicApp
     {
         private readonly IPEndPoint IpEndPoint;
         public IChatCommunicator _chatCommunicator { get; set; }
-
         //public Socket _client = null; 
-
         private IUI _ui;
+        public StringBuilder WriteBuffer { get; set; }
+
+
+       
         public Client(IPEndPoint ipEndPoint, IUI userinput, IChatCommunicator chatCommunicator)
         {
             IpEndPoint = ipEndPoint;
             _ui = userinput;
             _chatCommunicator = chatCommunicator;
             _chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); // may cause problems both task are using the same event handler ? racing condition 
-
+             WriteBuffer = new StringBuilder();
         }
 
         public async Task Connect(CancellationToken cancellation) 
@@ -109,35 +111,49 @@ namespace ChatBasicApp
                         _ui.Output($"\n[Received] {response}", MessageType.Status);
                         _ui.Output(">" + messageBuffer.ToString(), MessageType.General);
                     }
-                
+
 
                 // Handle input
+                if (response.Contains("<|QUIT|>"))
+                {
+                    _ui.Output("Server quit.", MessageType.Status);
+                    break;
+                }
                 
                 if (response.Contains("<|ACK|>"))
                 {
                     _ui.Output(
                     $"client received acknowledgment from server", MessageType.Status);
                     receivedBuffer.Replace("<|ACK|>", "");
-                    
-                    
                 }
+         
                 if (response.Contains("<|EOM|>"))
                 {
                     int index = response.IndexOf("<|EOM|>");
+                   
+                    if(WriteBuffer.Length != 0)
+                    {
+                        ProcessResponse.CurrentLine(); //wrong name this simply clears line , should include message but keep output separate. 
+                    }
+                    
                     string message = response.Substring(0, index);
+                    
                     _ui.Output($"Message received: {message}", MessageType.General);
+                    //move to ProcessResponse 
+                    
                     receivedBuffer = receivedBuffer.Remove(0, index + "<|EOM|>".Length);
                     Array.Clear(receivedFromRemote, 0, receivedFromRemote.Length);
                 }
                 else if (response.Contains("<|PRINT|>"))
                 {
-                    _ui.Output("Writing...", MessageType.General);
+                    _ui.Output("writing...", MessageType.General);
                 }
-                else if (response.Contains("<|QUIT|>"))
+                
+                if(WriteBuffer.Length > 0)
                 {
-                    _ui.Output("Server quit.",MessageType.Status);
-                    break;
+                    Console.Write(WriteBuffer.ToString());
                 }
+                
 
                 //if (Console.KeyAvailable)
                 //{
@@ -190,7 +206,7 @@ namespace ChatBasicApp
         public async Task Write(CancellationToken token)
         {
             
-            var WriteBuffer = new StringBuilder();
+            WriteBuffer = new StringBuilder();
 
             while (!token.IsCancellationRequested) 
             {
@@ -203,13 +219,33 @@ namespace ChatBasicApp
                         string inputresult = _ui.ReadInput();
 
                         //Handle the processed inputresult
-                        if (inputresult == "<|Quit|>" || inputresult == "<|EOM|>") // On Enter input (send the message) or Quit (break) 
+
+                        if (inputresult == "<|Quit|>")
                         {
-                            inputresult = inputresult == "<|EOM|>" ? WriteBuffer.ToString() + "<|EOM|>" : inputresult;  //EOM means enter input or else sent quit message
-                            byte[] messageBytes = Encoding.UTF8.GetBytes(inputresult);
+                            _ui.Output("You quit the chat session.", MessageType.General);
+                            break;
+                        }
+
+                        if (inputresult == "<BackSpace>")
+                        {
+                            WriteBuffer = WriteBuffer.Remove(WriteBuffer.Length - 1, 1);
+                            Console.Write(" \b"); //erase last char and move back
+                        }
+
+                        if (inputresult.Contains("<|EOM|>")) // On Enter input (send the message) 
+                        {
+                            string messageToSend = inputresult == "<|EOM|>" ? WriteBuffer.ToString() + "<|EOM|>" : inputresult;  //EOM means enter input or else sent quit message
+                            byte[] messageBytes = Encoding.UTF8.GetBytes(messageToSend);
                             try
                             {
-                                await _chatCommunicator.SendAsync(messageBytes, SocketFlags.None); 
+                                await _chatCommunicator.SendAsync(messageBytes, SocketFlags.None);
+
+                                _ui.Output(System.Environment.NewLine +
+                                  $"Sent: {inputresult.Replace("<|EOM|>", "")}", MessageType.General);
+
+                                //await WaitForAckAsync();
+                                WriteBuffer.Clear();
+                                _ui.Output("\nWrite another message:", MessageType.General);
 
                             }
                             catch (SocketException e)
@@ -218,29 +254,30 @@ namespace ChatBasicApp
                                 _ui.Output("Message from client could not be sent properly. " + e.Message, MessageType.Error);
                             }
 
-                            if (inputresult == "<|Quit|>")
-                            {
-                                _ui.Output("You quit the chat session.", MessageType.General);
-                                break;
-                            }
+                           
 
-                            if (inputresult.Contains("<|EOM|>"))
-                            {
-                                _ui.Output(System.Environment.NewLine +
-                                   $"Sent: {inputresult.Replace("<|EOM|>", "")}", MessageType.General);
+                            //if (inputresult.Contains("<|EOM|>") && inputresult !="<BackSpace>")
+                            //{
+                                
+                            //    _ui.Output(System.Environment.NewLine +
+                            //       $"Sent: {inputresult.Replace("<|EOM|>", "")}", MessageType.General);
 
-                                //await WaitForAckAsync();
-                                WriteBuffer.Clear();
-                                _ui.Output("\nWrite another message:", MessageType.General);
-                            }
+                            //    //await WaitForAckAsync();
+                            //    WriteBuffer.Clear();
+                            //    _ui.Output("\nWrite another message:", MessageType.General);
+                            //}
                         }
                         //If input and not Enter pressed just Append to buffer and send writing...
                         else
                         {
-                            WriteBuffer.Append(inputresult);
-                            //send writing...
+                            if (inputresult != "<BackSpace>")
+                            {
+
+                                WriteBuffer.Append(inputresult);
+                            //send code for writing... 
                             byte[] PrintingBytes = Encoding.UTF8.GetBytes("<|PRINT|>");
                             await _chatCommunicator.SendAsync(PrintingBytes, SocketFlags.None);//_client.SendAsync(PrintingBytes, SocketFlags.None);
+                            }
                             //_ui.Output(key, MessageType.General);
                         }
                     }

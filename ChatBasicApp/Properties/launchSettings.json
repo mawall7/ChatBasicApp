@@ -2,7 +2,7 @@
   "profiles": {
     "ChatBasicApp": {
       "commandName": "Project",
-      "commandLineArgs": "server"
+      "commandLineArgs": "client"
     }
   }
 }

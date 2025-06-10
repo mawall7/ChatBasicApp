@@ -30,20 +30,19 @@ namespace ChatBasicApp
                 {
                     result = "<|EOM|>";
                 }
-                if (input.Key == ConsoleKey.Backspace)
+                else if (input.Key == ConsoleKey.Backspace)
                 {
                     result = "<BackSpace>";
                 }
-                if (input.Key == ConsoleKey.F1)
+                else if (input.Key == ConsoleKey.F1)
                 {
                     result = "<|Quit|>";
                 }
-                if (input.Key == ConsoleKey.Spacebar)
+                else if (input.Key == ConsoleKey.Spacebar)
                 {
                     result = " ";
                 }
-
-                else if (char.IsLetterOrDigit(input.KeyChar) || char.IsSymbol(input.KeyChar))
+                else //if (char.IsLetterOrDigit(input.KeyChar) || char.IsSymbol(input.KeyChar))
                 {
                     result = input.KeyChar.ToString();
                 }
