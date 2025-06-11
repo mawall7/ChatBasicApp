@@ -24,7 +24,7 @@ namespace ChatBasicApp
 
         }
 
-        public async Task Connect() //TODO: future suggestion adding support for multiple clients.
+        public async Task ConnectAsync() //TODO: future suggestion adding support for multiple clients.
         {
             
             _chatCommunicator.CreateSocket(iPEndPoint.AddressFamily,
@@ -50,13 +50,13 @@ namespace ChatBasicApp
             catch (Exception e)
             {
 
-                _ui.Output("Connection with client failed.", MessageType.Error);
+                _ui.Output("Connection with client failed. " + e.Message, MessageType.Error);
             }
 
         }
 
         //TO DO: Make lock to avoid racing conditions. 
-        public async Task Listen(CancellationToken token)
+        public async Task ListenAsync(CancellationToken token)
         {
             int received = 0;
 
@@ -141,7 +141,7 @@ namespace ChatBasicApp
 
         //TO DO: Make lock to avoid racing conditions.
         
-        public async Task Write(CancellationToken token) //TO DO: Make Write testabble and do a common process commands class for server and client. 
+        public async Task WriteAsync(CancellationToken token) //TO DO: Make Write testabble and do a common process commands class for server and client. 
         {
             var WriteBuffer = new StringBuilder();
             

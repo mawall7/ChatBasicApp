@@ -33,10 +33,10 @@ namespace ChatBasicApp
                 {
                     Server chatserver = new Server(endPoint, _ui, new ChatCommunicator());
 
-                    await chatserver.Connect();
+                    await chatserver.ConnectAsync();
 
-                    var listentask = Task.Run(() => chatserver.Listen(cts.Token));
-                    var writetask = Task.Run(() => chatserver.Write(cts.Token));
+                    var listentask = Task.Run(() => chatserver.ListenAsync(cts.Token));
+                    var writetask = Task.Run(() => chatserver.WriteAsync(cts.Token));
 
                     await Task.WhenAny(listentask, writetask);
 
@@ -49,10 +49,10 @@ namespace ChatBasicApp
                 {
                     Client client = new Client(endPoint, _ui, new ChatCommunicator()); //injects the ISocketClient
 
-                    await client.Connect(token); //creates the Socket and connects to server 
+                    await client.ConnectAsync(token); //creates the Socket and connects to server 
 
-                    var clientlisten = Task.Run(() => client.Listen(cts.Token));
-                    var clientwrite = Task.Run(() => client.Write(cts.Token));
+                    var clientlisten = Task.Run(() => client.ListenAsync(cts.Token));
+                    var clientwrite = Task.Run(() => client.WriteAsync(cts.Token));
                     //try
                     //{
                     //    await clienttask;
@@ -62,11 +62,7 @@ namespace ChatBasicApp
                     //{
                     //    Console.WriteLine("Cancellation requested from remote server. This client task ended.");
 
-                    //}
-                    //catch(SocketException e)
-                    //{
-                    //    Console.WriteLine("The session was closed. Connection with server was lost." + " " +e.Message);
-                    //}
+                  
                     await Task.WhenAny(clientlisten, clientwrite);
                     _ui.Output("Client task ended...", NetworkServer.MessageType.Status);
                 }

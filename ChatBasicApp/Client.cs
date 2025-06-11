@@ -29,7 +29,7 @@ namespace ChatBasicApp
              WriteBuffer = new StringBuilder();
         }
 
-        public async Task Connect(CancellationToken cancellation) 
+        public async Task ConnectAsync(CancellationToken cancellation) 
         {
            
                 //_chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); //second parameter is allowed if it's not put in the (). 
@@ -65,7 +65,7 @@ namespace ChatBasicApp
         //    }
         //}
 
-        public async Task Listen(CancellationToken token)
+        public async Task ListenAsync(CancellationToken token)
         {
             _ui.Output("Write message to send.", MessageType.Status);
 
@@ -108,7 +108,7 @@ namespace ChatBasicApp
                     if (!string.IsNullOrWhiteSpace(response))
                     {
                         receivedBuffer.Append(response);
-                        _ui.Output($"\n[Received] {response}", MessageType.Status);
+                        _ui.Output($"\n[Received] {response}", MessageType.Status); //TODO process messagebuffer
                         _ui.Output(">" + messageBuffer.ToString(), MessageType.General);
                     }
 
@@ -203,7 +203,7 @@ namespace ChatBasicApp
             }
         }
 
-        public async Task Write(CancellationToken token)
+        public async Task WriteAsync(CancellationToken token)
         {
             
             WriteBuffer = new StringBuilder();
