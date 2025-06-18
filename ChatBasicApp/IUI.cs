@@ -10,6 +10,9 @@ namespace ChatBasicApp
     {
         public void Output(string input, MessageType messageType);
         public string ReadInput();
+        public bool HasKey();
+        public bool IsConsoleUI();
+
     }
 }
 

@@ -50,6 +50,9 @@ namespace ChatBasicApp
             return result;
         }
 
+        public bool HasKey() => Console.KeyAvailable;
+
+        public bool IsConsoleUI() => true;
         
 
     }

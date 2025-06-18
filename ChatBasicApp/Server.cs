@@ -8,6 +8,10 @@ using NetworkServer;
 
 namespace ChatBasicApp
 {
+
+    //// Deprecated: This Server class is no longer used after merging Server and Client classes into ChatPeer.
+    // Keeping temporarily for backup during refactor. To be removed after full testing.
+
     public class Server //:IDisposable
     {
         

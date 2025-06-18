@@ -83,7 +83,7 @@ namespace ChatBasicApp
                
             }
 
-            catch (NullReferenceException )
+            catch (SocketException)
             {
                 throw;
             }
@@ -98,11 +98,13 @@ namespace ChatBasicApp
                 return await sockettouse.SendAsync(buffer, flags);
 
             }
+            catch (SocketException) { throw; }
             catch (NullReferenceException e)
             {
                 Console.WriteLine("Error on Sending to remote. " + e.Message);
                 throw;
             }
+
         }
 
         public void Close()

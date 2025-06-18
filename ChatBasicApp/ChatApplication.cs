@@ -31,9 +31,10 @@ namespace ChatBasicApp
 
                 if (args[0].ToLower() == "server")
                 {
-                    Server chatserver = new Server(endPoint, _ui, new ChatCommunicator());
+                    //Server chatserver = new Server(endPoint, _ui, new ChatCommunicator());
+                    ChatPeer chatserver = new ChatPeer(endPoint, _ui, new ChatCommunicator());
 
-                    await chatserver.ConnectAsync();
+                    await chatserver.ConnectAsServerAsync();
 
                     var listentask = Task.Run(() => chatserver.ListenAsync(cts.Token));
                     var writetask = Task.Run(() => chatserver.WriteAsync(cts.Token));
@@ -47,9 +48,9 @@ namespace ChatBasicApp
 
                 else if (args[0].ToLower() == "client")
                 {
-                    Client client = new Client(endPoint, _ui, new ChatCommunicator()); //injects the ISocketClient
+                    ChatPeer client = new ChatPeer(endPoint, _ui, new ChatCommunicator()); //injects the ISocketClient
 
-                    await client.ConnectAsync(token); //creates the Socket and connects to server 
+                    await client.ConnectAsClientAsync(token); //creates the Socket and connects to server 
 
                     var clientlisten = Task.Run(() => client.ListenAsync(cts.Token));
                     var clientwrite = Task.Run(() => client.WriteAsync(cts.Token));
