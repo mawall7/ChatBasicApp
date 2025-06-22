@@ -173,8 +173,14 @@ namespace ChatBasicApp
             }
         }
 
-        public async Task WriteAsync(CancellationToken token)//TODO: Make Readble
+        public async Task WriteAsync(CancellationToken token)//TODO: Make Readable make input 
         {
+            Func<bool> myAction;
+           
+            
+
+            var runMode = ReadSettings.Read().RunMode;
+            myAction = runMode == "IntegrationTest" ? () => true: _ui.HasKey;  
             
             WriteBuffer = new StringBuilder();
 
@@ -185,12 +191,22 @@ namespace ChatBasicApp
                 if (_ui.IsConsoleUI())
                 {
 
-                    if (_ui.HasKey())  //TODO ! Make testable
+                    if (myAction.Invoke())//_ui.HasKey())  //TODO ! Make testable and clean. 
                     {
+                        string inputresult; 
                         
-                        string inputresult = _ui.ReadInput();
-
+                        if (ReadSettings.Read().RunMode == "IntegrationTest") //TODO: avoid mixing test logic with production code. Instead inject integrationTestUI , IUI instead! no need for if else statement
+                        {
+                            inputresult = Console.ReadLine(); //TODO: Don't use this! Inject integrationTestUI , IUI instead! 
+                        }
+                        else
+                        {
+                            inputresult = _ui.ReadInput();   // //TODO: inject integrationTestUI , IUI instead! 
+                        }
                         //Handle the processed inputresult
+                        
+                        // if(inputresult == "<|EOM|>") { Display(inputresult);} else {Send(Buffer); Display(inputresult);) 
+
 
                         if (inputresult == "<|Quit|>")
                         {

@@ -24,7 +24,7 @@ namespace ChatBasicApp
                 _ui = ui;
                 IPEndPoint endPoint = new(IPAddress.Parse("127.0.0.1"), 8081);// change to IPAdress.Any()
                 //Console.WriteLine("ChatApplication ChatBasicApplication v.1 is running...)");
-                _ui.Output("ChatApplication ChatBasicApplication v.1 is running...)",NetworkServer.MessageType.Status);
+                _ui.Output("ChatBasicApplication v.1 is running...",NetworkServer.MessageType.Status);
                 cts = new CancellationTokenSource();
                 token = cts.Token;
                 

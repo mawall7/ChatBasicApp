@@ -5,7 +5,9 @@ VisualStudioVersion = 16.0.31112.23
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatBasicApp", "ChatBasicApp\ChatBasicApp.csproj", "{D2935A1A-0427-419D-A6B7-A67D8FDBFFA8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatBasicApp_Tests", "ChatBasicApp_Tests\ChatBasicApp_Tests.csproj", "{EAFCA980-0136-4F6E-A38E-1203E3F6A089}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatBasicApp_Tests", "ChatBasicApp_Tests\ChatBasicApp_Tests.csproj", "{EAFCA980-0136-4F6E-A38E-1203E3F6A089}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console_IntegrationTests", "Console_IntegrationTests\Console_IntegrationTests.csproj", "{BDF0BABF-D9C2-4F39-A5E3-6EDD72FABEB1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{EAFCA980-0136-4F6E-A38E-1203E3F6A089}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EAFCA980-0136-4F6E-A38E-1203E3F6A089}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EAFCA980-0136-4F6E-A38E-1203E3F6A089}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDF0BABF-D9C2-4F39-A5E3-6EDD72FABEB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDF0BABF-D9C2-4F39-A5E3-6EDD72FABEB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDF0BABF-D9C2-4F39-A5E3-6EDD72FABEB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDF0BABF-D9C2-4F39-A5E3-6EDD72FABEB1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
