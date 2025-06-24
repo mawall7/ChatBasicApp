@@ -10,22 +10,10 @@ using System;
 
 namespace ChatBasicApp_Tests
 {
-    public class Tests //TO DO: Add more tests!// Add tests that exercise both client and server behavior via the new ChatPeer class.
+    [Category("UnitTest")]
+    public class Tests 
 
-/* Test edge cases:
-
-Can it connect as server?
-
-Can it connect as client?
-
-Can it send and receive messages?
-
-What happens on disconnect?
-
-What happens on failed connections?
-
-If possible, run integration tests where you have multiple ChatPeer instances talking to each other*/
-//TODO Write Send when IUI is not Console
+    //TODO Write Send when IUI is not Console
     {
         private Mock<IUI> mockUI;
         private ChatPeer client;

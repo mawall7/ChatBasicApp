@@ -24,8 +24,8 @@
 2) The testing challenges needed to be handled were:
 	- implement a testing-friendly environment 
 	- set up the tests, mocks (pretty straitforward?)
-	- setting up asyncronous tests.
-	
+	- setting up asyncronous tests unit tests.
+    - integration tests.
 
 If possible, run integration tests where you have multiple ChatPeer instances talking to each other*/
 
@@ -91,6 +91,59 @@ using this, a racing condition may occur leading to interruptions, so a lock was
    You can also make the outer method catch OperationCancelledException to test this clean cancellation. 
    Another thing that testing this method made me realize was that I should have implemented a timeout for the chat ReadAsync and SendAsync operations from start,
    it's common practise for sending recieving async.
+
+  - Integration tests
+
+according to chatgpt:
+
+you have:
+
+✅ Clear separation of concerns
+
+✅ Interfaces for UI and Network layers
+
+✅ Pure tests on logic without external dependencies
+
+✅ Cancellation tests
+
+You could easily upgrade it to testable full integration by adding:
+
+In-memory implementation of IChatCommunicator (for real message passing simulation)
+
+In-memory IUI implementation (already done)
+
+Write true end-to-end simulation tests — still fully in-process without real sockets or console
+
+reflection on integration tests: 
+
+Integration tests redirecting console input using Process are rarely used and might 
+be flaky , because of timing issues that has to be handled and therefore hard to implement,
+and also slow which is not good for CI/CD pipelines where you want tests to run fast and they 
+can also be OS dependent. They are sometimes
+included in end-to-end tests but, (I did some experimentation with one such test) but,
+they will probably not be included in the final project, because of these reasons.  
+
+Some chatgpt advice:
+
+testing with inmemory ICommunicator (itegration test without real socket):  
+Why is this still very useful?
+Because most of the complexity in your application isn't in the socket layer — it’s in how you:
+
+Handle protocols (your special markers: <|EOM|>, <|ACK|>, etc.)
+
+Process messages
+
+Control flow
+
+UI updates
+
+Error handling
+
+If you can fully test that, you get:
+
+✅ High confidence that your protocol is correct
+✅ Fast tests (because there’s no real network)
+✅ Deterministic tests (no flakiness from real sockets)
    
 Error considerations and solution: 
 

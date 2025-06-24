@@ -18,8 +18,18 @@ namespace ChatBasicApp
             
             string jsonFile = Path.Combine(AppContext.BaseDirectory, "Settings.json");
             string json = File.ReadAllText(jsonFile);
+            AppSettings appSettings = default;
+            try
+            {
+                appSettings = JsonSerializer.Deserialize<AppSettings>(json);
 
-            var appSettings = JsonSerializer.Deserialize<AppSettings>(json);
+            }
+
+            catch (Exception e)
+            {
+
+                Console.WriteLine("Could not deserialize the Json fille"); ;
+            }
             return appSettings;
         }
 

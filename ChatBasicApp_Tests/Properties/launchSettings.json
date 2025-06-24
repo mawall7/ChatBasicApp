@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ChatBasicApp_Tests": {
+      "commandName": "Project",
+      "commandLineArgs": "client"
+    }
+  }
+}

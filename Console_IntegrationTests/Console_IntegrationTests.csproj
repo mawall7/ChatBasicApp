@@ -19,4 +19,14 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ChatBasicApp\ChatBasicApp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="NetworkServer">
+      <HintPath>..\..\NetworkServer\NetworkServer\bin\Debug\net5.0\NetworkServer.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

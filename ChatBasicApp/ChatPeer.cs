@@ -94,10 +94,10 @@ namespace ChatBasicApp
 
                 
                 int received = 0;
+                
                 try
                 {
-                
-                    received = await _chatCommunicator.ReceiveAsync(receivedFromRemote, SocketFlags.None); 
+                        received = await _chatCommunicator.ReceiveAsync(receivedFromRemote, SocketFlags.None);
                 }
                
 
@@ -165,23 +165,22 @@ namespace ChatBasicApp
                     _ui.Output("writing...", MessageType.General);
                 }
                 
-                if(WriteBuffer.Length > 0)
-                {
-                    Console.Write(WriteBuffer.ToString());
-                }
+                //if(WriteBuffer.Length > 0) ?????????????? for test 
+                //{
+                //    Console.Write(WriteBuffer.ToString());
+                //}
+                   
                 
             }
         }
 
         public async Task WriteAsync(CancellationToken token)//TODO: Make Readable make input 
         {
-            Func<bool> myAction;
+            //Func<bool> myAction;
            
-            
+            //var runMode = ReadSettings.Read().RunMode;
+            //myAction = runMode == "IntegrationTest" ? () => true: _ui.HasKey;  //TODO: DONE now the UI for test HasKey always returns true. remove this line and avoid mixing test logic with production code. Instead inject integrationTestUI
 
-            var runMode = ReadSettings.Read().RunMode;
-            myAction = runMode == "IntegrationTest" ? () => true: _ui.HasKey;  
-            
             WriteBuffer = new StringBuilder();
 
             while (!token.IsCancellationRequested) 
@@ -191,18 +190,20 @@ namespace ChatBasicApp
                 if (_ui.IsConsoleUI())
                 {
 
-                    if (myAction.Invoke())//_ui.HasKey())  //TODO ! Make testable and clean. 
+                    if (_ui.HasKey())//(myAction.Invoke())//_ui.HasKey())  //TODO ! Make testable and clean. 
                     {
-                        string inputresult; 
-                        
-                        if (ReadSettings.Read().RunMode == "IntegrationTest") //TODO: avoid mixing test logic with production code. Instead inject integrationTestUI , IUI instead! no need for if else statement
-                        {
-                            inputresult = Console.ReadLine(); //TODO: Don't use this! Inject integrationTestUI , IUI instead! 
-                        }
-                        else
-                        {
-                            inputresult = _ui.ReadInput();   // //TODO: inject integrationTestUI , IUI instead! 
-                        }
+                        string inputresult;
+
+                        inputresult = _ui.ReadInput();   // //TODO: inject integrationTestUI , IUI instead! and include _ui.HasKey in ReadInput method preferably
+
+                        //if (ReadSettings.Read().RunMode == "IntegrationTest") //TODO: avoid mixing test logic with production code. Instead inject integrationTestUI , IUI instead! no need for if else statement
+                        //{
+                        //    inputresult = Console.ReadLine(); //TODO: Don't use this! Inject integrationTestUI , IUI instead! 
+                        //}
+                        //else
+                        //{
+                        //    inputresult = _ui.ReadInput();   // //TODO: inject integrationTestUI , IUI instead! 
+                        //}
                         //Handle the processed inputresult
                         
                         // if(inputresult == "<|EOM|>") { Display(inputresult);} else {Send(Buffer); Display(inputresult);) 
@@ -271,8 +272,6 @@ namespace ChatBasicApp
                         }
                     }
                    
-                    
-                    
                 }
                 else if (_ui.IsConsoleUI() == false)//_ui is not ConsoleUI) //WPF UI or other MAUI
                 {

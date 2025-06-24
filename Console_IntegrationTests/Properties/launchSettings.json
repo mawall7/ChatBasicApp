@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Console_IntegrationTests": {
+      "commandName": "Project",
+      "commandLineArgs": "client"
+    }
+  }
+}

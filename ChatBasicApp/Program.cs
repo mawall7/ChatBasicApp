@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ChatBasicApp.UI;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -11,9 +12,28 @@ namespace ChatBasicApp
     {
         public static void Main(string[] args) 
         {
+            IUI AppUI;
+
+            if (args.Length > 1)
+            {
+
+                AppUI = (args[1]) switch //TODO: Add arguement for GUI 
+                {
+                    string ui when ui == "UnitTest" => new ConsoleUI(),
+                    string ui when ui == "IntegrationTest" => new ReadLineConsoleUI(),
+                    _ => new ConsoleUI()
+                };
+            }
+            else
+            {
+                AppUI = new ConsoleUI();
+            }
+            
             try
             {
-                ChatApplication.Run(args, new ConsoleUI()).GetAwaiter().GetResult();
+                ChatApplication.Run(args, AppUI).GetAwaiter().GetResult();
+
+                //ChatApplication.Run(args, new ConsoleUI()).GetAwaiter().GetResult();
 
             }
             catch (Exception e)
