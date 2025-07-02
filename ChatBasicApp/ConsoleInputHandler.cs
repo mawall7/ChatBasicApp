@@ -17,7 +17,7 @@ namespace ChatBasicApp
                 {
                     if (_ui.HasKey())
                     {
-                        inputresult = _ui.ReadInput();
+                        inputresult = _ui.ReadInput(); //returns CodedKey
                     }
                 }
                 return inputresult;

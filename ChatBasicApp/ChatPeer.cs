@@ -192,9 +192,8 @@ namespace ChatBasicApp
                 await Task.Delay(100);
 
                         
-                        inputresult = inputHandler.ReadInput(_ui);
-                       
-                     
+                        inputresult = inputHandler.ReadInput(_ui); //will never return Print message!
+                        
                         if(MessageParser.IsQuit(inputresult))
                         {
                             _ui.Output("You quit the chat session.", MessageType.General);    
@@ -209,6 +208,7 @@ namespace ChatBasicApp
                         else if (MessageParser.IsEOM(inputresult)) 
                         {
                             responseTask = inputProcessor.ProcessFullMessage(inputresult, WriteBuffer); // TODO: possible change. internalize WriteBuffer.
+                            //ToDO intenalize this : if(receivedBuffer.Length > 0) { renderer.ReRenderLines()}
                         }
                         
                         else if (MessageParser.IsPrint(inputresult))

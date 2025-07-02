@@ -17,7 +17,8 @@ namespace ChatBasicApp
         private readonly IUI _ui;
         private readonly IUIRenderer _consoleRenderer;
         public IChatCommunicator _chatCommunicator { get; }
-        public event Action<string> Message;
+        public event Action<string, MessageType> PrintMessages;
+        
         public ProcessConsoleResponse(IUI ui, IUIRenderer consoleRenderer, IChatCommunicator chatCommunicator)
         {
             this._ui = ui;
@@ -84,11 +85,10 @@ namespace ChatBasicApp
                 }
             }
         }
-         
+         //TODO : refactor class and method has four responsibilities parsing, sending, output and handle buffer
         public async Task ProcessFullMessage(string inputresult, StringBuilder WriteBuffer)
         {
-            if (inputresult.Contains("<|EOM|>")) // TO DO: externalize if check 
-            {
+                 
                 var messageToSend = GetFullInputMessage(inputresult, WriteBuffer);
                 var messageBytes = Encoding.UTF8.GetBytes(messageToSend);
                 
@@ -100,7 +100,7 @@ namespace ChatBasicApp
                       $"Sent: {messageToSend}", MessageType.General);
 
                     //await WaitForAckAsync();
-                    WriteBuffer.Clear();
+                    WriteBuffer.Clear(); //TODO: possible change. externalize buffer
                     _ui.Output("\nWrite another message:", MessageType.General);
 
                 }
@@ -111,14 +111,12 @@ namespace ChatBasicApp
                     _chatCommunicator.Dispose();
                     throw;
                 }
-            }
+            
         }
 
         public async Task ProcessPrintMessage(string inputresult, StringBuilder WriteBuffer)
         {
-            if (inputresult.Length == 1) // == is not token
-            {
-
+           
                 WriteBuffer.Append(inputresult);
                 //send code for writing... 
                 /*  _consoleRenderer.ReRender(inputresult, WriteBuffer); *///externalize this witch check for rerenderinput? or keep since it belongs to UI
@@ -126,6 +124,7 @@ namespace ChatBasicApp
                 try
                 {
                     await _chatCommunicator.SendAsync(PrintingBytes, SocketFlags.None);
+                    _ui.Output("inputresult, MessageType.General", MessageType.General);
                 }
 
                 catch (SocketException e)
@@ -135,8 +134,8 @@ namespace ChatBasicApp
                     throw; // should not throw, new SocketException();
 
                 }
-            }
         }
+            
 
         public string GetFullInputMessage(string inputresult, StringBuilder WriteBuffer)
         {
@@ -144,9 +143,6 @@ namespace ChatBasicApp
             return messageToSend;
 
         }
-
-
-
 
 
     }

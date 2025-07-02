@@ -8,7 +8,7 @@ namespace ChatBasicApp
 {
     public interface IUI
     {
-        public void Output(string input, MessageType messageType);
+        public void Output(string input, MessageType messageType, bool newLine = true);
 
         public string ReadInput();
         public bool HasKey();

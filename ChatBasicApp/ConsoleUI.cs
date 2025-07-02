@@ -10,13 +10,20 @@ namespace ChatBasicApp
     {
         private readonly object _consolelock = new object();
 
-        public void Output(string input, MessageType messageType)
+        public void Output(string input, MessageType messageType, bool newLine = true)
         {
             lock (_consolelock)
             {
-                Console.WriteLine(input);
+                if (newLine)
+                {
+                    Console.WriteLine(input);
+                }
+                else 
+                    Console.Write(input);
             }
         }
+
+       
 
         public string ReadInput()
         {

@@ -23,7 +23,7 @@ namespace ChatBasicApp.UI
         public bool HasKey() => true;
         public bool IsConsoleUI() => true;
 
-        public void Output(string input, MessageType messageType)
+        public void Output(string input, MessageType messageType, bool newLine = true) 
         {
            
                 lock (_consolelock)
