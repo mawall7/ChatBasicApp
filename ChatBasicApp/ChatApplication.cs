@@ -18,26 +18,29 @@ namespace ChatBasicApp
         internal static CancellationTokenSource cts;
         internal static CancellationToken token;
         private static IUI _ui;
-        public static async Task Run(string[] args, IUI ui)
+        private readonly IChatPeer chatPeer;
+        //private static IInputProcessor _inputProcessor;
+        public static async Task Run(string[] args, IUI ui, IInputProcessor inputProcessor,
+            IInputHandler inputHandler, IUIRenderer renderer, IChatPeer chatPeer)
         {
             
                 _ui = ui;
-                IPEndPoint endPoint = new(IPAddress.Parse("127.0.0.1"), 8081);// change to IPAdress.Any()
+                //IPEndPoint endPoint = new(IPAddress.Parse("127.0.0.1"), 8081);// change to IPAdress.Any()
                 //Console.WriteLine("ChatApplication ChatBasicApplication v.1 is running...)");
                 _ui.Output("ChatBasicApplication v.1 is running...",NetworkServer.MessageType.Status);
                 cts = new CancellationTokenSource();
                 token = cts.Token;
-                
+                //add check ui and add appropriate Iinput processor 
 
                 if (args[0].ToLower() == "server")
                 {
-                    //Server chatserver = new Server(endPoint, _ui, new ChatCommunicator());
-                    ChatPeer chatserver = new ChatPeer(endPoint, _ui, new ChatCommunicator());
+                //Server chatserver = new Server(endPoint, _ui, new ChatCommunicator());
+                IChatPeer chatserver = chatPeer; //new ChatPeer(endPoint, _ui, new ChatCommunicator());
 
                     await chatserver.ConnectAsServerAsync();
 
                     var listentask = Task.Run(() => chatserver.ListenAsync(cts.Token));
-                    var writetask = Task.Run(() => chatserver.WriteAsync(cts.Token));
+                    var writetask = Task.Run(() => chatserver.WriteAsync(cts.Token, inputProcessor, renderer, inputHandler));
 
                     await Task.WhenAny(listentask, writetask);
 
@@ -48,12 +51,12 @@ namespace ChatBasicApp
 
                 else if (args[0].ToLower() == "client")
                 {
-                    ChatPeer client = new ChatPeer(endPoint, _ui, new ChatCommunicator()); //injects the ISocketClient
+                    IChatPeer client = chatPeer;//new ChatPeer(endPoint, _ui, new ChatCommunicator()); //injects the ISocketClient
 
                     await client.ConnectAsClientAsync(token); //creates the Socket and connects to server 
 
                     var clientlisten = Task.Run(() => client.ListenAsync(cts.Token));
-                    var clientwrite = Task.Run(() => client.WriteAsync(cts.Token));
+                    var clientwrite = Task.Run(() => client.WriteAsync(cts.Token, inputProcessor, renderer, inputHandler));
                     //try
                     //{
                     //    await clienttask;

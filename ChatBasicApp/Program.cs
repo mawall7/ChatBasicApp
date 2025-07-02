@@ -10,10 +10,15 @@ namespace ChatBasicApp
 {
     class Program
     {
+            public static IUI AppUI { get; set; }
+            public static IInputHandler inputHandler { get; set; }
+            public static IInputProcessor inputProcessor { get; set; }
+            public static IUIRenderer uiRenderer { get; set; }
+
+            public static IChatCommunicator communicator { get; set; }
+
         public static void Main(string[] args) 
         {
-            IUI AppUI;
-
             if (args.Length > 1)
             {
 
@@ -21,17 +26,26 @@ namespace ChatBasicApp
                 {
                     string ui when ui == "UnitTest" => new ConsoleUI(),
                     string ui when ui == "IntegrationTest" => new ReadLineConsoleUI(),
+                    //string ui when ui == "other"
                     _ => new ConsoleUI()
                 };
+
             }
-            else
+                
+                
+            if(AppUI == null || AppUI is ConsoleUI) //TODO : refactor to follow DRY  
             {
                 AppUI = new ConsoleUI();
+                inputHandler = new ConsoleInputHandler();
+                uiRenderer = new ConsoleRenderer();
+                communicator = new ChatCommunicator();
+                inputProcessor = new ProcessConsoleResponse(new ConsoleUI(), uiRenderer, communicator);
             }
             
             try
             {
-                ChatApplication.Run(args, AppUI).GetAwaiter().GetResult();
+                IPEndPoint endPoint = new(IPAddress.Parse("127.0.0.1"), 8081);// change to IPAdress.Any()
+                ChatApplication.Run(args, AppUI, inputProcessor, inputHandler, uiRenderer, new ChatPeer(endPoint, AppUI, communicator)).GetAwaiter().GetResult();
 
                 //ChatApplication.Run(args, new ConsoleUI()).GetAwaiter().GetResult();
 

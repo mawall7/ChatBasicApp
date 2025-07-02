@@ -10,23 +10,27 @@ using NetworkServer;
 
 namespace ChatBasicApp
 {
-    public class ChatPeer //: IDisposable
+    public class ChatPeer : IChatPeer//: IDisposable
     {
         private readonly IPEndPoint _iPEndPoint;
         public IChatCommunicator _chatCommunicator { get; set; }
-        
+
         private IUI _ui;
-        public StringBuilder WriteBuffer { get; set; }
+        public static StringBuilder WriteBuffer { get; set; }
 
+        public Dictionary<string, Delegate> ProcessInputDict = new()
+        {
+            { "<BackSpace>", new Func<int, int, StringBuilder>((x, y) => { return WriteBuffer.Remove(1, 2); }) },
+            { "<Space>", new Action<string?>((s) => Console.Write(WriteBuffer.ToString())) }
+        };
 
-       
         public ChatPeer(IPEndPoint ipEndPoint, IUI userinput, IChatCommunicator chatCommunicator)
         {
             _iPEndPoint = ipEndPoint;
             _ui = userinput;
             _chatCommunicator = chatCommunicator;
-            _chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status); 
-             WriteBuffer = new StringBuilder();
+            _chatCommunicator.StatusMessage += (msg) => _ui.Output(msg, MessageType.Status);
+            WriteBuffer = new StringBuilder(); //Console Buffer
         }
 
         public async Task ConnectAsServerAsync() //TODO: future suggestion adding support for multiple clients.
@@ -53,35 +57,34 @@ namespace ChatBasicApp
             }
 
         }
-        public async Task ConnectAsClientAsync(CancellationToken cancellation) 
+        public async Task ConnectAsClientAsync(CancellationToken cancellation)
         {
 
-                _chatCommunicator.CreateSocket(_iPEndPoint.AddressFamily,
-                   SocketType.Stream,
-                   ProtocolType.Tcp);
+            _chatCommunicator.CreateSocket(_iPEndPoint.AddressFamily,
+               SocketType.Stream,
+               ProtocolType.Tcp);
 
-                bool connected = false;
+            bool connected = false;
 
-                while (!connected && !cancellation.IsCancellationRequested)
+            while (!connected && !cancellation.IsCancellationRequested)
+            {
+                try
                 {
-                    try
-                    {
-                        await _chatCommunicator.ConnectAsync(_iPEndPoint);  //await _client.ConnectAsync(IpEndPoint);
-                        connected = true;
-                        //_ui.Output("Connection accepted from server.", MessageType.Status ); use event inside ChatCommunicator class instead.
-                    }
-                    catch (Exception e)
-                    {
-                        _ui.Output("Will try again to connect to remote ." + e.Message, MessageType.Status);
-                        await Task.Delay(2000);
-                    }
+                    await _chatCommunicator.ConnectAsync(_iPEndPoint);  //await _client.ConnectAsync(IpEndPoint);
+                    connected = true;
+                    //_ui.Output("Connection accepted from server.", MessageType.Status ); use event inside ChatCommunicator class instead.
                 }
+                catch (Exception e)
+                {
+                    _ui.Output("Will try again to connect to remote ." + e.Message, MessageType.Status);
+                    await Task.Delay(2000);
+                }
+            }
         }
 
 
         public async Task ListenAsync(CancellationToken token) //TODO: Make Readable
         {
-            _ui.Output("Write message to send.", MessageType.Status);
 
             StringBuilder messageBuffer = new();
             string response = "";
@@ -92,39 +95,46 @@ namespace ChatBasicApp
             {
                 await Task.Delay(100);
 
-                
+
                 int received = 0;
-                
+
                 try
                 {
-                        received = await _chatCommunicator.ReceiveAsync(receivedFromRemote, SocketFlags.None);
+                    //TODO: possible refactoring 
+                    //
+                    //{
+                    //  string Message = ReceiveMessage(); handle errors in method
+                    //  if(string.IsNotNullOrEmpty(Message)
+                    //  received.Add(RecievedMessage)
+                    //}
+                    received = await _chatCommunicator.ReceiveAsync(receivedFromRemote, SocketFlags.None);
                 }
-               
+
 
                 catch (SocketException ex)
                 {
                     _ui.Output("The remote peer seems to have ungracefully disconnected. " + ex.Message, MessageType.Error);
                     _chatCommunicator.Dispose();
                     break;
-                    
+
                 }
-                    
-                    if(received == 0)
-                    {
-                       _ui.Output("The remote peer disconnected.", MessageType.Status);
-                       _chatCommunicator.Dispose();
-                       break;
-                    }
 
-                    response = Encoding.UTF8.GetString(receivedFromRemote, 0, received);
+                if (received == 0)
+                {
+                    _ui.Output("The remote peer disconnected.", MessageType.Status);
+                    _chatCommunicator.Dispose();
+                    break;
+                }
+
+                response = Encoding.UTF8.GetString(receivedFromRemote, 0, received);
 
 
-                    if (!string.IsNullOrWhiteSpace(response))
-                    {
-                        receivedBuffer.Append(response);
-                        _ui.Output($"\n[Received] {response}", MessageType.Status); //TODO proccess messagebuffer
-                        _ui.Output(">" + messageBuffer.ToString(), MessageType.General);
-                    }
+                if (!string.IsNullOrWhiteSpace(response))
+                {
+                    receivedBuffer.Append(response);
+                    _ui.Output($"\n[Received] {response}", MessageType.Status); //TODO proccess messagebuffer
+                    _ui.Output(">" + messageBuffer.ToString(), MessageType.General);
+                }
 
 
                 // Handle input
@@ -133,30 +143,30 @@ namespace ChatBasicApp
                     _ui.Output("remote quit.", MessageType.Status);
                     break;
                 }
-                
+
                 if (response.Contains("<|ACK|>"))
                 {
                     _ui.Output(
                     $"Received acknowledgment", MessageType.Status);
                     receivedBuffer.Replace("<|ACK|>", "");
                 }
-         
+
                 if (response.Contains("<|EOM|>"))
                 {
                     byte[] messageBytes = Encoding.UTF8.GetBytes("<|ACK|>");
                     await _chatCommunicator.SendAsync(messageBytes, SocketFlags.None);
                     int index = response.IndexOf("<|EOM|>");
-                   
-                    if(WriteBuffer.Length != 0)
+
+                    if (WriteBuffer.Length != 0)
                     {
-                        ProcessResponse.CurrentLine(); //TODO: wrong name this simply clears line , should include message but keep output separate. 
+                        ConsoleRenderer.DeleteCurrentConsoleLine(); 
                     }
-                    
+
                     string message = response.Substring(0, index);
-                    
+
                     _ui.Output($"Message received: {message}", MessageType.General);
                     //move to ProcessResponse 
-                    
+
                     receivedBuffer = receivedBuffer.Remove(0, index + "<|EOM|>".Length);
                     Array.Clear(receivedFromRemote, 0, receivedFromRemote.Length);
                 }
@@ -164,140 +174,303 @@ namespace ChatBasicApp
                 {
                     _ui.Output("writing...", MessageType.General);
                 }
-                
-                //if(WriteBuffer.Length > 0) ?????????????? for test 
-                //{
-                //    Console.Write(WriteBuffer.ToString());
-                //}
-                   
-                
+
             }
         }
 
-        public async Task WriteAsync(CancellationToken token)//TODO: Make Readable make input 
+        public async Task WriteAsync(CancellationToken token, IInputProcessor inputProcessor, IUIRenderer renderer, IInputHandler inputHandler)//TODO: Make Readable make input 
         {
-            //Func<bool> myAction;
-           
-            //var runMode = ReadSettings.Read().RunMode;
-            //myAction = runMode == "IntegrationTest" ? () => true: _ui.HasKey;  //TODO: DONE now the UI for test HasKey always returns true. remove this line and avoid mixing test logic with production code. Instead inject integrationTestUI
+          
+             Task responseTask = default;
+             string inputresult;
+             WriteBuffer = new StringBuilder();
+            
+            _ui.Output("Write a message to send.", MessageType.Status);
 
-            WriteBuffer = new StringBuilder();
-
-            while (!token.IsCancellationRequested) 
+            while (!token.IsCancellationRequested)
             {
-                await Task.Delay(100);//, token);
-                
-                if (_ui.IsConsoleUI())
-                {
+                await Task.Delay(100);
 
-                    if (_ui.HasKey())//(myAction.Invoke())//_ui.HasKey())  //TODO ! Make testable and clean. 
-                    {
-                        string inputresult;
-
-                        inputresult = _ui.ReadInput();   // //TODO: inject integrationTestUI , IUI instead! and include _ui.HasKey in ReadInput method preferably
-
-                        //if (ReadSettings.Read().RunMode == "IntegrationTest") //TODO: avoid mixing test logic with production code. Instead inject integrationTestUI , IUI instead! no need for if else statement
-                        //{
-                        //    inputresult = Console.ReadLine(); //TODO: Don't use this! Inject integrationTestUI , IUI instead! 
-                        //}
-                        //else
-                        //{
-                        //    inputresult = _ui.ReadInput();   // //TODO: inject integrationTestUI , IUI instead! 
-                        //}
-                        //Handle the processed inputresult
                         
-                        // if(inputresult == "<|EOM|>") { Display(inputresult);} else {Send(Buffer); Display(inputresult);) 
-
-
-                        if (inputresult == "<|Quit|>")
+                        inputresult = inputHandler.ReadInput(_ui);
+                       
+                     
+                        if(MessageParser.IsQuit(inputresult))
                         {
-                            _ui.Output("You quit the chat session.", MessageType.General);
+                            _ui.Output("You quit the chat session.", MessageType.General);    
                             break;
                         }
-
-                        if (inputresult == "<BackSpace>")
+                        else if (MessageParser.IsRenderCommand(inputresult)) //space or bs 
                         {
-                            WriteBuffer = WriteBuffer.Remove(WriteBuffer.Length - 1, 1);
-                            Console.Write(" \b"); //erase last char and move back
+                            renderer.ReRender(inputresult, WriteBuffer); //TODO: possible change. renders text for console (for now). Possible to make work with WPF if wanted.
+                        }
+                       
+                        
+                        else if (MessageParser.IsEOM(inputresult)) 
+                        {
+                            responseTask = inputProcessor.ProcessFullMessage(inputresult, WriteBuffer); // TODO: possible change. internalize WriteBuffer.
+                        }
+                        
+                        else if (MessageParser.IsPrint(inputresult))
+                        {
+                            responseTask = inputProcessor.ProcessPrintMessage(inputresult, WriteBuffer);
+                        }
+                        else 
+                        {
+                            throw new ParseInputException();
                         }
 
-                        if (inputresult.Contains("<|EOM|>")) // On Enter input (send the message) 
+                        try
                         {
-                            string messageToSend = inputresult == "<|EOM|>" ? WriteBuffer.ToString() + "<|EOM|>" : inputresult;  //EOM means enter input or else sent quit message
-                            byte[] messageBytes = Encoding.UTF8.GetBytes(messageToSend);
-                            try
-                            {
-                                await _chatCommunicator.SendAsync(messageBytes, SocketFlags.None); //TODO: TimeOut
-                                messageToSend = messageToSend.Replace("<|EOM|>", "");
-                                _ui.Output(System.Environment.NewLine +
-                                  $"Sent: {messageToSend}", MessageType.General);
-
-                                //await WaitForAckAsync();
-                                WriteBuffer.Clear();
-                                _ui.Output("\nWrite another message:", MessageType.General);
-
-                            }
-                            catch (SocketException e)
-                            {
-
-                                _ui.Output("Message could not be sent properly. " + e.Message, MessageType.Error);
-                                _chatCommunicator.Dispose();
-                                break;
-                            }
-
+                            await responseTask;
                         }
-                        //If input and not Enter pressed just Append to buffer and send writing...
-                        else
+                        catch (SocketException e)
                         {
-                            if (inputresult != "<BackSpace>")
-                            {
-
-                                WriteBuffer.Append(inputresult);
-                                //send code for writing... 
-                                byte[] PrintingBytes = Encoding.UTF8.GetBytes("<|PRINT|>");
-                                try
-                                {
-                                     await _chatCommunicator.SendAsync(PrintingBytes, SocketFlags.None); 
-                                }
-
-                                catch (SocketException e)
-                                {
-                                    _ui.Output("Message could not be sent properly. " + e.Message, MessageType.Error);
-                                    _chatCommunicator.Dispose();
-                                    break;
-
-                                }
-                            }
-                            
+                            _ui.Output("Exception thrown on WriteAsync." + e.Message, MessageType.Error);
                         }
-                    }
-                   
-                }
-                else if (_ui.IsConsoleUI() == false)//_ui is not ConsoleUI) //WPF UI or other MAUI
-                {
-                    string msg = _ui.ReadInput(); // TO DO: wpf handler can make sure to only execute this on return press so don't need that part (unlike for console) for writing this has be fixed in some way
-                    if (msg.Contains("<|PRINT|>")) //FIX : change this ?
-                    {
-                        msg = "<|PRINT|>";
-                    }
-                    
-                    byte[] messageBytes = Encoding.UTF8.GetBytes(msg);
-                    await _chatCommunicator.SendAsync(messageBytes, SocketFlags.None);
+                       
 
-                }
+
+
+                        //if (inputresult.Contains("<|EOM|>")) // On Enter input (send the message) 
+                        //{
+                        //    string messageToSend = inputresult == "<|EOM|>" ? WriteBuffer.ToString() + "<|EOM|>" : inputresult;  //EOM means enter input or else sent quit message
+                        //    byte[] messageBytes = Encoding.UTF8.GetBytes(messageToSend);
+                        //    try
+                        //    {
+                        //        await _chatCommunicator.SendAsync(messageBytes, SocketFlags.None); //TODO: TimeOut
+                        //        messageToSend = messageToSend.Replace("<|EOM|>", "");
+                        //        _ui.Output(System.Environment.NewLine +
+                        //          $"Sent: {messageToSend}", MessageType.General);
+
+                        //        //await WaitForAckAsync();
+                        //        WriteBuffer.Clear();
+                        //        _ui.Output("\nWrite another message:", MessageType.General);
+
+                        //    }
+                        //    catch (SocketException e)
+                        //    {
+
+                        //        _ui.Output("Message could not be sent properly. " + e.Message, MessageType.Error);
+                        //        _chatCommunicator.Dispose();
+                        //        break;
+                        //    }
+
+                        //}
+                        ////If input and not Enter pressed just Append to buffer and send writing...
+
+                        //else if (inputresult.Length == 1) // == is not token
+                        //{
+
+                        //    WriteBuffer.Append(inputresult);
+                        //    //send code for writing... 
+                        //    byte[] PrintingBytes = Encoding.UTF8.GetBytes("<|PRINT|>");
+                        //    try
+                        //    {
+                        //        await _chatCommunicator.SendAsync(PrintingBytes, SocketFlags.None);
+                        //    }
+
+                        //    catch (SocketException e)
+                        //    {
+                        //        _ui.Output("Message could not be sent properly. " + e.Message, MessageType.Error);
+                        //        _chatCommunicator.Dispose();
+                        //        break;
+
+                        //    }
+                        //}
+                        //if (inputresult == "<|Quit|>")
+                        //{
+                        //    _ui.Output("You quit the chat session.", MessageType.General); //TODO: change. wrong! should quit token should be sent;
+                        //    break;
+                        //}
+
+
+
+                //    }
+
+                //}
+                ////ProcessInput(_ui)
+                //else if (_ui.IsConsoleUI() == false)//_ui is not ConsoleUI) //WPF UI or other MAUI
+                //{
+                //    string msg = _ui.ReadInput(); // TO DO: wpf handler can make sure to only execute this on return press so don't need that part (unlike for console) for writing this has be fixed in some way
+                //    if (msg.Contains("<|PRINT|>")) //FIX : change this ?
+                //    {
+                //        msg = "<|PRINT|>";
+                //    }
+                //    if (msg.Contains("<|Quit|>"))
+                //        break;
+
+                //    byte[] messageBytes = Encoding.UTF8.GetBytes(msg);
+                //    await _chatCommunicator.SendAsync(messageBytes, SocketFlags.None);
+
+                //}
             }
         }
 
-       
+        //ConsolePrinter
 
-        private void DeleteCurrentConsoleLine() 
-        {
-            int currentLine = Console.CursorTop;
-            Console.SetCursorPosition(0, currentLine);
-            Console.Write(new string(' ', Console.WindowWidth)); // Overwrite the whole line with spaces
-            Console.SetCursorPosition(0, currentLine); // Reset cursor to start
-        }
+        //public void RenderConsoleWindow(string inputresult, StringBuilder WriteBuffer)
+        //{
+        //    var CursorPos = Console.GetCursorPosition();
 
-        
-    }
-}
+        //    if (inputresult == "<Space>") //TODO  bug writing a letter and then space adds characters to the end
+        //    {
+        //        CursorPos = Console.GetCursorPosition();
+
+        //        WriteBuffer = WriteBuffer.Insert(CursorPos.Left, " ");
+        //        Console.SetCursorPosition(CursorPos.Left + 1, CursorPos.Top);
+        //        CursorPos = Console.GetCursorPosition();
+        //        DeleteCurrentConsoleLine();
+        //        Console.Write(WriteBuffer.ToString());
+        //        Console.SetCursorPosition(CursorPos.Left, CursorPos.Top);
+        //        return;
+        //    }
+
+        //    else if (inputresult == "<BackSpace>")
+        //    {
+
+        //        WriteBuffer = WriteBuffer.Remove(CursorPos.Left - 1, 1);
+        //        DeleteCurrentConsoleLine();
+        //        Console.Write(WriteBuffer.ToString());
+        //        Console.SetCursorPosition(CursorPos.Left - 1, CursorPos.Top);
+        //        return;
+
+        //        //Console.Write("\b \b"); //erase last char and move back
+        //    }
+
+
+        //    else if (inputresult == "<Left>")
+        //    {
+        //        Console.SetCursorPosition(CursorPos.Left - 1, CursorPos.Top); //TO DO doesn work 
+        //        return;
+        //    }
+        //    else if (inputresult == "<Right>")
+        //    {
+        //        Console.SetCursorPosition(CursorPos.Left + 1, CursorPos.Top);
+        //        return;
+        //    }
+        //    else
+        //        Console.Write(inputresult);
+
+        //}
+
+
+
+        //private void DeleteCurrentConsoleLine()
+        //{
+        //    int currentLine = Console.CursorTop;
+        //    Console.SetCursorPosition(0, currentLine);
+        //    Console.Write(new string(' ', Console.WindowWidth)); // Overwrite the whole line with spaces
+        //    Console.SetCursorPosition(0, currentLine); // Reset cursor to start
+        //}
+
+
+
+        //public string inputHandler(string input, IUI _ui)
+        //{
+        //    string inputresult = null;
+
+        //    if (_ui.IsConsoleUI())
+        //    {
+
+        //        if (_ui.HasKey())//TODO ! Make testable and clean. 
+        //        {
+
+        //            inputresult = _ui.ReadInput();
+        //        }
+        //    }
+        //    else if (!_ui.IsConsoleUI())
+        //    {
+        //        inputresult = _ui.ReadInput();
+        //    }
+            
+        //    return inputresult;
+        //}
+
+        //public async Task InputProcessor(string inputresult, IUI _ui, IUIRenderer ConsoleRenderer, IChatCommunicator _chatCommunicator, StringBuilder WriteBuffer) //TO DO : erase Quit , have a input handler/ConsoleHelper return type. check quit before process input and sending.
+        //{
+           
+        //            ConsoleRenderer.ReRender(inputresult, WriteBuffer);
+
+        //            //TODO: change 
+        //            //if (inputresult == "<|Quit|>")
+        //            //{
+        //            //    _ui.Output("You quit the chat session.", MessageType.General); //TODO: change. wrong! should quit token should be sent;
+        //            //    break;
+        //            //}
+
+        //    if(_ui is ConsoleUI) {
+
+        //        if (inputresult.Contains("<|EOM|>")) // On Enter input (send the message) 
+        //        {
+        //            string messageToSend = inputresult == "<|EOM|>" ? WriteBuffer.ToString() + "<|EOM|>" : inputresult;  //EOM means enter input or else sent quit message
+        //            byte[] messageBytes = Encoding.UTF8.GetBytes(messageToSend);
+        //            try
+        //            {
+        //                await _chatCommunicator.SendAsync(messageBytes, SocketFlags.None); //TODO: TimeOut
+        //                messageToSend = messageToSend.Replace("<|EOM|>", "");
+        //                _ui.Output(System.Environment.NewLine +
+        //                  $"Sent: {messageToSend}", MessageType.General);
+
+        //                //await WaitForAckAsync();
+        //                WriteBuffer.Clear();
+        //                _ui.Output("\nWrite another message:", MessageType.General);
+
+        //            }
+        //            catch (SocketException e)
+        //            {
+
+        //                _ui.Output("Message could not be sent properly. " + e.Message, MessageType.Error);
+        //                _chatCommunicator.Dispose();
+        //                throw new SocketException();
+        //            }
+
+        //            if (inputresult.Length == 1) // == is not token
+        //            {
+
+        //                WriteBuffer.Append(inputresult);
+        //                //send code for writing... 
+        //                byte[] PrintingBytes = Encoding.UTF8.GetBytes("<|PRINT|>");
+        //                try
+        //                {
+        //                    await _chatCommunicator.SendAsync(PrintingBytes, SocketFlags.None);
+        //                }
+
+        //                catch (SocketException e)
+        //                {
+        //                    _ui.Output("Message could not be sent properly. " + e.Message, MessageType.Error);
+        //                    _chatCommunicator.Dispose();
+        //                    throw new SocketException();
+
+        //                }
+        //            }
+        //            if (inputresult == "<|Quit|>")
+        //            {
+        //                _ui.Output("You quit the chat session.", MessageType.General); //TODO: change. wrong! should quit token should be sent;
+        //                throw new TaskCanceledException();
+        //            }
+
+
+
+        //            //}
+        //            //}
+        //            //ProcessInput(_ui)
+        //        }
+        //        else if (_ui.IsConsoleUI() == false)//_ui is not ConsoleUI) //WPF UI or other MAUI
+        //        {
+        //            string msg = _ui.ReadInput(); // TO DO: wpf handler can make sure to only execute this on return press so don't need that part (unlike for console) for writing this has be fixed in some way
+        //            if (msg.Contains("<|PRINT|>")) //FIX : change this ?
+        //            {
+        //                msg = "<|PRINT|>";
+        //            }
+        //            if (msg.Contains("<|Quit|>"))
+        //                throw new TaskCanceledException();
+
+        //            byte[] messageBytes = Encoding.UTF8.GetBytes(msg);
+        //            await _chatCommunicator.SendAsync(messageBytes, SocketFlags.None);
+
+        //        }
+        //    }
+        //}
+    } }
+
